@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup Airtable · tenerifIA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #080f1a;
+      color: #dff0ff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(41,197,246,0.25);
+      border-radius: 24px;
+      padding: 3rem;
+      max-width: 540px;
+      width: 100%;
+    }
+    .logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1060b8, #29c5f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .subtitle { color: #6a90b8; font-size: 0.9rem; margin-bottom: 2rem; line-height: 1.6; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; color: #6a90b8; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.4rem; }
+    input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #dff0ff;
+      font-size: 0.9rem;
+      font-family: inherit;
+      margin-bottom: 1.25rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #29c5f6; }
+    input::placeholder { color: #6a90b8; }
+    .help { font-size: 0.78rem; color: #6a90b8; margin-top: -0.9rem; margin-bottom: 1.25rem; }
+    .help a { color: #29c5f6; text-decoration: none; }
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      background: linear-gradient(135deg, #1060b8, #29c5f6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.88; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #log {
+      margin-top: 1.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .log-item.ok  { border-color: rgba(16,185,129,0.3); color: #6ee7b7; }
+    .log-item.err { border-color: rgba(239,68,68,0.3);  color: #fca5a5; }
+    .log-item.inf { border-color: rgba(41,197,246,0.2);  color: #7bdcf7; }
+    .result-box {
+      margin-top: 1.5rem;
+      display: none;
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid rgba(16,185,129,0.4);
+      background: rgba(16,185,129,0.06);
+    }
+    .result-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 0.75rem; color: #6ee7b7; }
+    .result-box code {
+      display: block;
+      background: rgba(0,0,0,0.3);
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #29c5f6;
+      word-break: break-all;
+      margin-bottom: 0.75rem;
+    }
+    .result-box p { font-size: 0.82rem; color: #6a90b8; line-height: 1.6; }
+    .next-steps { margin-top: 1.5rem; display: none; }
+    .next-steps h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; margin-bottom: 1rem; }
+    .step-item {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      margin-bottom: 0.75rem; font-size: 0.85rem; color: #6a90b8; line-height: 1.5;
+    }
+    .step-num {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(41,197,246,0.15); border: 1px solid rgba(41,197,246,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: #29c5f6;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">tenerifIA</div>
+  <h1>Crear base de datos Airtable</h1>
+  <p class="subtitle">Este script crea la tabla de leads con todos los campos (formulario + análisis IA) en tu base de Airtable. Ejecútalo una sola vez.</p>
+
+  <label>Airtable Personal Access Token</label>
+  <input type="password" id="api-key" placeholder="patXXXXXXXXXXXXXX.XXXX…" />
+  <p class="help">
+    Consíguelo en <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a>
+    → Create token → Scope: <strong>schema.bases:write</strong> + <strong>data.records:write</strong>
+  </p>
+
+  <label>ID de tu base Airtable</label>
+  <input type="text" id="base-id" placeholder="appXXXXXXXXXXXXXX" />
+  <p class="help">
+    Crea una base vacía en Airtable llamada "tenerifIA CRM". El ID está en la URL:
+    airtable.com/<strong>appXXXXXX</strong>/...
+  </p>
+
+  <button onclick="setup()" id="btn">Crear tabla de leads →</button>
+
+  <div id="log"></div>
+  <div class="result-box" id="result-box">
+    <h3>✅ Tabla creada correctamente</h3>
+    <p>Copia este Table ID y ponlo en el <code>.env</code>:</p>
+    <code id="table-id-output"></code>
+    <p>Ya puedes cerrar esta página y abrir tu Airtable para ver la tabla.</p>
+  </div>
+
+  <div class="next-steps" id="next-steps">
+    <h3>Próximos pasos</h3>
+    <div class="step-item"><div class="step-num">1</div><span>Pon el Table ID de arriba en el <code>.env</code> como <code>AIRTABLE_TABLE_ID</code></span></div>
+    <div class="step-item"><div class="step-num">2</div><span>En Airtable → Automations → "When record created" → "Send email" → escribe el email de confirmación para el lead usando el campo Email</span></div>
+    <div class="step-item"><div class="step-num">3</div><span>Pásale las credenciales del <code>.env</code> a Claude y conecta el formulario con Gemini + Airtable</span></div>
+  </div>
+</div>
+
+<script>
+const TABLE_DEFINITION = {
+  name: "Leads",
+  description: "Leads captados desde tenerifIA.com — con scoring automático de Gemini",
+  fields: [
+    // ── Datos del formulario ──────────────────────────────────────
+    { name: "Nombre",          type: "singleLineText" },
+    { name: "Email",           type: "email" },
+    { name: "Empresa",         type: "singleLineText" },
+    { name: "Teléfono",        type: "phoneNumber" },
+    { name: "Sector", type: "singleSelect", options: { choices: [
+      { name: "Hostelería y restauración", color: "orangeLight2" },
+      { name: "Comercio y retail",         color: "yellowLight2" },
+      { name: "Inmobiliaria",              color: "greenLight2"  },
+      { name: "Salud y bienestar",         color: "tealLight2"   },
+      { name: "Servicios profesionales",   color: "blueLight2"   },
+      { name: "Turismo y viajes",          color: "purpleLight2" },
+      { name: "Construcción y reforma",    color: "redLight2"    },
+      { name: "E-commerce",               color: "pinkLight2"   },
+      { name: "Otro",                      color: "grayLight2"   }
+    ]}},
+    { name: "Mensaje",         type: "multilineText" },
+    { name: "Equipo", type: "singleSelect", options: { choices: [
+      { name: "Solo (autónomo)",  color: "grayLight2"  },
+      { name: "2–5 personas",     color: "blueLight2"  },
+      { name: "6–20 personas",    color: "yellowLight2"},
+      { name: "Más de 20",        color: "greenBright" }
+    ]}},
+    { name: "Canal preferido", type: "singleSelect", options: { choices: [
+      { name: "WhatsApp",     color: "greenLight2"  },
+      { name: "Email",        color: "blueLight2"   },
+      { name: "Videollamada", color: "purpleLight2" }
+    ]}},
+    { name: "Disponibilidad", type: "singleSelect", options: { choices: [
+      { name: "Esta semana",              color: "redBright"   },
+      { name: "La próxima semana",        color: "yellowBright"},
+      { name: "Sin prisa, cuando podáis", color: "grayLight2" }
+    ]}},
+
+    // ── Análisis de Gemini ────────────────────────────────────────
+    { name: "IA Score",  type: "number", options: { precision: 0 } },
+    { name: "Temperatura", type: "singleSelect", options: { choices: [
+      { name: "Caliente", color: "redBright"    },
+      { name: "Templado", color: "yellowBright" },
+      { name: "Frío",     color: "blueLight2"   }
+    ]}},
+    { name: "Presupuesto estimado", type: "singleSelect", options: { choices: [
+      { name: "Alto +5.000€",        color: "greenBright"  },
+      { name: "Medio 1.000-5.000€",  color: "yellowBright" },
+      { name: "Bajo -1.000€",        color: "grayLight2"   },
+      { name: "Desconocido",         color: "gray"         }
+    ]}},
+    { name: "Tamaño proyecto", type: "singleSelect", options: { choices: [
+      { name: "Grande",  color: "greenBright"  },
+      { name: "Medio",   color: "yellowBright" },
+      { name: "Pequeño", color: "grayLight2"   }
+    ]}},
+    { name: "Probabilidad cierre", type: "singleSelect", options: { choices: [
+      { name: "Alta",  color: "greenBright"  },
+      { name: "Media", color: "yellowBright" },
+      { name: "Baja",  color: "redLight2"    }
+    ]}},
+    { name: "Lead real",  type: "checkbox" },
+    { name: "Prioridad", type: "singleSelect", options: { choices: [
+      { name: "Urgente", color: "redBright"    },
+      { name: "Normal",  color: "yellowBright" },
+      { name: "Baja",    color: "grayLight2"   }
+    ]}},
+    { name: "Razonamiento IA",  type: "multilineText"   },
+    { name: "Siguiente acción", type: "singleLineText"  },
+
+    // ── Gestión manual ────────────────────────────────────────────
+    { name: "Estado", type: "singleSelect", options: { choices: [
+      { name: "Nuevo",               color: "blueBright"   },
+      { name: "Contactado",          color: "yellowBright" },
+      { name: "Propuesta enviada",   color: "purpleBright" },
+      { name: "Cerrado ✅",          color: "greenBright"  },
+      { name: "Descartado",          color: "gray"         }
+    ]}},
+    { name: "Notas",   type: "multilineText" },
+    { name: "Origen",  type: "url"            },
+    { name: "Fecha",   type: "date", options: { dateFormat: { name: "european" } } }
+  ]
+};
+
+function log(msg, type = 'inf') {
+  const el = document.getElementById('log');
+  el.style.display = 'flex';
+  const icon = type === 'ok' ? '✓' : type === 'err' ? '✗' : '·';
+  const div = document.createElement('div');
+  div.className = `log-item ${type}`;
+  div.textContent = `${icon}  ${msg}`;
+  el.appendChild(div);
+}
+
+async function setup() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  const baseId = document.getElementById('base-id').value.trim();
+  const btn    = document.getElementById('btn');
+
+  if (!apiKey || !baseId) { alert('Rellena los dos campos.'); return; }
+  if (!baseId.startsWith('app')) { alert('El ID de base debe empezar por "app".'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Creando tabla…';
+  document.getElementById('log').innerHTML = '';
+
+  log('Conectando con Airtable…');
+
+  try {
+    const res = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(TABLE_DEFINITION)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      log(`Error ${res.status}: ${data?.error?.message || JSON.stringify(data)}`, 'err');
+      btn.disabled = false;
+      btn.textContent = 'Reintentar →';
+      return;
+    }
+
+    log(`Tabla "${data.name}" creada con ${data.fields?.length} campos`, 'ok');
+    log(`Table ID: ${data.id}`, 'ok');
+    log('¡Todo listo! Copia el Table ID de abajo.', 'ok');
+
+    document.getElementById('table-id-output').textContent = data.id;
+    document.getElementById('result-box').style.display = 'block';
+    document.getElementById('next-steps').style.display = 'block';
+    btn.textContent = '✓ Tabla creada';
+
+  } catch (e) {
+    log(`Error de red: ${e.message}`, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Reintentar →';
+  }
+}
+</script>
+</body>
+</html>
